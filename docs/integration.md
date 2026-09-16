@@ -16,11 +16,13 @@
    ```js
    validators: {
      team: async ({ id, workspaceId }) => assertTeamBelongsToOwner(id, workspaceId),
-     user: async ({ id, workspaceId }) => assertUserCanOperateInWorkspace(id, workspaceId)
+     user: async ({ id, workspaceId }) => assertUserCanOperateInWorkspace(id, workspaceId),
+     contact: async ({ id, workspaceId }) => assertContactBelongsToWorkspace(id, workspaceId)
    }
    ```
 
-   The module rejects non-null `team_id`, `supervisor_id` or `user_id` values
+   The module rejects non-null `team_id`, `supervisor_id`, `user_id` or
+   `contact_id` values
    when the corresponding validator is not installed.
 6. Add the permission slugs from the README to the existing permission catalog.
 7. Add `departments`, `areas` and `routing_rules` to the plan-limit catalog only

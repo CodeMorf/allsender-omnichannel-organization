@@ -15,6 +15,7 @@ test('organization routes require a workspace resolver and preserve the resolved
   };
   app.use('/api/organization', createOrganizationRoutes({
     service,
+    allowUnsafeForTests: true,
     resolveWorkspaceId: () => '507f1f77bcf86cd799439011'
   }));
   const server = await new Promise((resolve) => {
@@ -31,4 +32,8 @@ test('organization routes require a workspace resolver and preserve the resolved
 
 test('organization routes reject construction without a secure workspace resolver', () => {
   assert.throws(() => createOrganizationRoutes(), /resolveWorkspaceId is required/);
+});
+
+test('organization routes reject construction without host authentication and permission middleware', () => {
+  assert.throws(() => createOrganizationRoutes({ resolveWorkspaceId: () => '507f1f77bcf86cd799439011' }), /authenticate middleware is required/);
 });

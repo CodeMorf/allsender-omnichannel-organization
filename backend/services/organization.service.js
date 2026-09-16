@@ -37,6 +37,13 @@ const pageOptions = (query = {}) => {
 
 const safeRegex = (value) => String(value || '').trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+const normalizeConditions = (conditions = {}) => ({
+  platform: conditions.platform ? String(conditions.platform).trim().toLowerCase() : null,
+  account_id: conditions.account_id ? String(conditions.account_id).trim() : null,
+  keywords: Array.isArray(conditions.keywords) ? conditions.keywords.map(String).map((x) => x.trim()).filter(Boolean).slice(0, 50) : [],
+  tag_ids: Array.isArray(conditions.tag_ids) ? conditions.tag_ids.map((id) => asId(id, 'tag_id')) : []
+});
+
 const matchConditions = (input, conditions = {}) => {
   if (conditions.platform && String(input.platform || '').toLowerCase() !== String(conditions.platform).toLowerCase()) return false;
   if (conditions.account_id && String(input.account_id || '') !== String(conditions.account_id)) return false;
@@ -179,6 +186,8 @@ class OrganizationService {
     const current = await this.getArea({ workspaceId, id });
     const membershipCount = await this.Membership.countDocuments({ area_id: current._id, workspace_id: current.workspace_id, deleted_at: null });
     if (membershipCount > 0) throw new Error('Area cannot be deleted while it has active members');
+    const ruleCount = await this.RoutingRule.countDocuments({ 'target.area_id': current._id, workspace_id: current.workspace_id, deleted_at: null, status: 'active' });
+    if (ruleCount > 0) throw new Error('Area cannot be deleted while it has active routing rules');
     return this.Area.findOneAndUpdate({ _id: current._id, workspace_id: current.workspace_id, deleted_at: null }, { $set: { deleted_at: new Date(), status: 'inactive', updated_by: asId(actorId, 'updated_by') } }, { new: true }).lean();
   }
 
@@ -215,7 +224,7 @@ class OrganizationService {
     if (String(area.department_id) !== String(department._id)) throw new Error('Routing target area does not belong to the target department');
     const clean = cleanName(name, 'Routing rule name');
     await this.validateExternalReference('team', target.team_id, workspaceId, 'team_id');
-    return this.RoutingRule.create({ workspace_id: workspace, name: clean, description: description ? String(description).trim() : null, priority: Number(priority) || 100, conditions: { platform: conditions.platform || null, account_id: conditions.account_id || null, keywords: Array.isArray(conditions.keywords) ? conditions.keywords.map(String).map((x) => x.trim()).filter(Boolean).slice(0, 50) : [], tag_ids: Array.isArray(conditions.tag_ids) ? conditions.tag_ids.map((id) => asId(id, 'tag_id')) : [] }, target: { department_id: department._id, area_id: area._id, team_id: target.team_id ? asId(target.team_id, 'team_id') : null, assignment_mode: target.assignment_mode || 'queue' }, created_by: asId(actorId, 'created_by') });
+    return this.RoutingRule.create({ workspace_id: workspace, name: clean, description: description ? String(description).trim() : null, priority: Number(priority) || 100, conditions: normalizeConditions(conditions), target: { department_id: department._id, area_id: area._id, team_id: target.team_id ? asId(target.team_id, 'team_id') : null, assignment_mode: target.assignment_mode || 'queue' }, created_by: asId(actorId, 'created_by') });
   }
 
   async listRoutingRules({ workspaceId, status } = {}) {
@@ -232,7 +241,7 @@ class OrganizationService {
     if (data.description !== undefined) update.description = data.description ? String(data.description).trim() : null;
     if (data.priority !== undefined) update.priority = Number(data.priority) || 100;
     if (data.status !== undefined) update.status = data.status;
-    if (data.conditions !== undefined) update.conditions = data.conditions;
+    if (data.conditions !== undefined) update.conditions = normalizeConditions(data.conditions);
     if (data.target !== undefined) {
       const department = await ensureWorkspaceResource(this.Department, data.target?.department_id, workspaceId, 'Department');
       const area = await ensureWorkspaceResource(this.Area, data.target?.area_id, workspaceId, 'Area');
@@ -258,6 +267,7 @@ class OrganizationService {
   async recordAssignment({ workspaceId, actorId = null, contactId = null, conversationKey, previous = {}, next = {}, source, metadata = {} }) {
     if (!conversationKey || !String(conversationKey).trim()) throw new Error('conversation_key is required');
     if (!['manual', 'rule', 'round_robin', 'migration'].includes(source)) throw new Error('Invalid assignment source');
+    await this.validateExternalReference('contact', contactId, workspaceId, 'contact_id');
     return this.AssignmentEvent.create({ workspace_id: asId(workspaceId, 'workspace_id'), contact_id: contactId ? asId(contactId, 'contact_id') : null, conversation_key: String(conversationKey).trim(), previous, next, source, actor_id: actorId ? asId(actorId, 'actor_id') : null, metadata });
   }
 }

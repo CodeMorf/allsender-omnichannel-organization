@@ -18,8 +18,11 @@ const asyncRoute = (handler) => (req, res) => Promise.resolve(handler(req, res))
 
 const usePermission = (checkPermission, permission) => checkPermission ? checkPermission(permission) : noOp;
 
-export function createOrganizationRoutes({ models, middlewares = {}, validators, resolveWorkspaceId, service = null } = {}) {
+export function createOrganizationRoutes({ models, middlewares = {}, validators, resolveWorkspaceId, service = null, allowUnsafeForTests = false } = {}) {
   if (typeof resolveWorkspaceId !== 'function') throw new Error('resolveWorkspaceId is required for tenant-safe organization routes');
+  if (!allowUnsafeForTests && typeof middlewares.authenticate !== 'function') throw new Error('authenticate middleware is required for organization routes');
+  if (!allowUnsafeForTests && typeof middlewares.requireSubscription !== 'function') throw new Error('requireSubscription middleware is required for organization routes');
+  if (!allowUnsafeForTests && typeof middlewares.checkPermission !== 'function') throw new Error('checkPermission middleware is required for organization routes');
   const organization = service || (models ? new (organizationService.constructor)(models, validators) : organizationService);
   const router = express.Router();
   const authenticate = middlewares.authenticate || noOp;
