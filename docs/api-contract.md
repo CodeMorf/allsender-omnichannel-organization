@@ -23,6 +23,7 @@ PATCH   /departments/:id/settings/resolution
 PATCH   /departments/:id/settings/satisfaction
 PATCH   /departments/:id/settings/ai
 GET     /departments/:id/summary
+GET     /departments/:id/satisfaction
 ```
 
 La configuración está separada de la identidad de `Department` en la relación
@@ -138,7 +139,7 @@ business_hours:   mode, timezone, enabled, schedule, away_message,
                   after_hours_behavior
 resolution:       mode, reason_requirement, auto_close, close_after_minutes,
                   notify_before_minutes, notification_message, send_farewell,
-                  close_ai_chats
+                  farewell_message, close_ai_chats
 satisfaction:     enabled, send_on_auto_close, type, request_message,
                   thank_you_message, request_comment, comment_timeout,
                   comment_message, rating_rules, translations
@@ -150,3 +151,14 @@ ai:               mode, agent_id, response_language, similarity_threshold,
 Los modos `inherit`, `custom` y `disabled` permiten que horario, resolución e
 IA hereden la configuración de empresa sin obligar al usuario a conocer la
 implementación interna.
+
+Cuando `chat.flow_enabled` es verdadero y `chat.flow_id` referencia un flujo
+activo del mismo usuario y workspace, el host puede ejecutarlo como bienvenida
+del primer mensaje. La referencia se valida contra el workspace y la ejecución
+debe conservar el motor de automatizaciones existente; si no es válida, el
+mensaje `greeting` queda como fallback.
+
+`/departments/:id/satisfaction` devuelve el resumen persistido de respuestas
+del departamento (`total_responses`, `average_rating`, `distribution`,
+`comments_count` y respuestas recientes). Las respuestas deben calcularse
+siempre con asignaciones y contactos del workspace validado.

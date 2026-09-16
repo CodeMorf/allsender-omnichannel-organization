@@ -9,6 +9,7 @@ export function createOrganizationApi(options: OrganizationApiOptions) {
   async function request<T>(path: string, init: RequestInit = {}, workspaceId: string): Promise<T> {
     const headers = new Headers(init.headers);
     headers.set('Content-Type', 'application/json');
+    if (workspaceId) headers.set('X-Workspace-Id', workspaceId);
     const token = options.getToken?.();
     if (token) headers.set('Authorization', `Bearer ${token}`);
     const response = await fetcher(`${baseUrl}${path}`, { ...init, headers });
@@ -28,6 +29,7 @@ export function createOrganizationApi(options: OrganizationApiOptions) {
     getDepartmentSettings: (workspaceId: string, id: string) => request<DepartmentSettings>(`/departments/${encodeURIComponent(id)}/settings?workspace_id=${encodeURIComponent(workspaceId)}`, {}, workspaceId),
     updateDepartmentSettings: (workspaceId: string, id: string, section: string, body: Record<string, unknown>) => request<DepartmentSettings>(`/departments/${encodeURIComponent(id)}/settings/${encodeURIComponent(section)}?workspace_id=${encodeURIComponent(workspaceId)}`, patch(body), workspaceId),
     getDepartmentSummary: (workspaceId: string, id: string) => request<{ department: Department; settings: DepartmentSettings; agentsCount: number; openConversations: number | null }>(`/departments/${encodeURIComponent(id)}/summary?workspace_id=${encodeURIComponent(workspaceId)}`, {}, workspaceId),
+    getDepartmentSatisfaction: (workspaceId: string, id: string) => request<{ total_responses: number; average_rating: number | null; distribution: Record<number, number>; comments_count: number; recent: unknown[] }>(`/departments/${encodeURIComponent(id)}/satisfaction?workspace_id=${encodeURIComponent(workspaceId)}`, {}, workspaceId),
     listDepartmentConnections: (workspaceId: string, id: string) => request<{ items: Array<{ id: string; name: string; platform: string; is_active: boolean }>; selected_ids: string[]; department_id: string }>(`/departments/${encodeURIComponent(id)}/connections?workspace_id=${encodeURIComponent(workspaceId)}`, {}, workspaceId),
     updateDepartmentConnections: (workspaceId: string, id: string, connectionIds: string[]) => request<DepartmentSettings>(`/departments/${encodeURIComponent(id)}/connections?workspace_id=${encodeURIComponent(workspaceId)}`, put({ connection_ids: connectionIds, workspace_id: workspaceId }), workspaceId),
     listDepartmentMembers: (workspaceId: string, id: string) => request<OrganizationMembership[]>(`/departments/${encodeURIComponent(id)}/members?workspace_id=${encodeURIComponent(workspaceId)}`, {}, workspaceId),
