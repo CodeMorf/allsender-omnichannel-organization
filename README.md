@@ -89,7 +89,9 @@ PUT   /assignments/:contactId
 `assignConversation` es el adaptador del host para actualizar la asignación
 persistida de Inbox y registrar el evento. El módulo valida el workspace y los
 destinos organizativos antes de invocarlo; no duplica `ChatAssignment` ni
-conoce la forma interna de cada host.
+conoce la forma interna de cada host. Para una bandeja omnicanal puede recibir
+`platform`, `accountId` y `connectionId`; `whatsappPhoneNumberId` se conserva
+como alias de compatibilidad para hosts que todavía usan el flujo histórico.
 
 Las rutas históricas de áreas, membresías, reglas y eventos se conservan. El
 endpoint de satisfacción devuelve respuestas, promedio, distribución 1-5 y

@@ -130,6 +130,12 @@ una regla solo calcula el destino. El host debe aplicar ese destino a su flujo
 existente de Inbox/`ChatAssignment` y registrar un `assignment-event`; la
 resolución no envía mensajes, no invoca IA y no modifica contactos por sí sola.
 
+La asignación manual admite contexto omnicanal: `platform`, `accountId` y
+`connectionId` identifican la conversación concreta. `whatsappPhoneNumberId`
+queda como campo opcional de compatibilidad con integraciones históricas. El
+host debe usar la cuenta/conexión validada para evitar reutilizar una
+asignación de otro canal del mismo contacto.
+
 ## Estructura de `DepartmentSettings`
 
 ```text
