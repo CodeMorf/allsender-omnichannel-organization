@@ -31,6 +31,13 @@
 8. Add a host adapter that validates existing `Team`, `User`, `Contact` and
    `ChatAssignment` references before saving an operational relationship.
 
+The repository includes `createAllSenderOrganizationHostAdapter` as a starting
+adapter for the current AllSender schemas. It resolves the selected workspace
+only from `x-workspace-id`, checks ownership through `Workspace`, and validates
+teams, agents and contacts against the existing collections. The production host
+must still inject its real model registry and review its permission/plan policy
+before enabling writes.
+
 ## Platform host
 
 1. Add the client in `src/redux/api` or adapt `frontend/organizationApi.ts` to

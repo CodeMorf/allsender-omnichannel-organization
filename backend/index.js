@@ -7,3 +7,4 @@ export { default as organizationService } from './services/organization.service.
 export { createOrganizationService } from './services/organization.service.js';
 export { createOrganizationRoutes } from './routes/organization.routes.js';
 export { registerOrganizationModule } from './integration/register.js';
+export { createAllSenderOrganizationHostAdapter } from './integration/allSenderHostAdapter.js';

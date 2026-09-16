@@ -9,7 +9,7 @@
   },
   "scripts": {
     "test": "node --test",
-    "check": "node --check backend/index.js && node --check backend/services/organization.service.js && node --check backend/routes/organization.routes.js && node --check backend/integration/register.js",
+    "check": "node --check backend/index.js && node --check backend/services/organization.service.js && node --check backend/routes/organization.routes.js && node --check backend/integration/register.js && node --check backend/integration/allSenderHostAdapter.js",
     "typecheck": "tsc --noEmit",
     "validate": "npm run check && npm run typecheck && npm test"
   },
