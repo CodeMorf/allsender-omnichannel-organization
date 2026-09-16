@@ -22,7 +22,7 @@ test('organization routes require a workspace resolver and preserve the resolved
     const instance = app.listen(0, () => resolve(instance));
   });
   try {
-    const response = await fetch(`http://127.0.0.1:${server.address().port}/api/organization/departments`);
+    const response = await fetch(`http://127.0.0.1:${server.address().port}/api/organization/departments?workspaceId=507f1f77bcf86cd799439012`);
     assert.equal(response.status, 200);
     assert.equal(calls[0].workspaceId, '507f1f77bcf86cd799439011');
   } finally {

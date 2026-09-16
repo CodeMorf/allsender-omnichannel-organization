@@ -43,12 +43,12 @@ export function createOrganizationRoutes({ models, middlewares = {}, validators,
   const actor = (req) => actorIdFrom(req);
 
   router.get('/departments', usePermission(checkPermission, 'view.departments'), asyncRoute(async (req, res) => {
-    const data = await organization.listDepartments({ workspaceId: workspace(req), ...req.query });
+    const data = await organization.listDepartments({ ...req.query, workspaceId: workspace(req) });
     return res.json({ success: true, data });
   }));
 
   router.post('/departments', checkPlanLimit ? checkPlanLimit('departments') : noOp, usePermission(checkPermission, 'create.departments'), asyncRoute(async (req, res) => {
-    const data = await organization.createDepartment({ workspaceId: workspace(req), actorId: actor(req), ...req.body });
+    const data = await organization.createDepartment({ ...req.body, workspaceId: workspace(req), actorId: actor(req) });
     return res.status(201).json({ success: true, data });
   }));
 
@@ -58,7 +58,7 @@ export function createOrganizationRoutes({ models, middlewares = {}, validators,
   }));
 
   router.put('/departments/:id', usePermission(checkPermission, 'update.departments'), asyncRoute(async (req, res) => {
-    const data = await organization.updateDepartment({ workspaceId: workspace(req), actorId: actor(req), id: req.params.id, ...req.body });
+    const data = await organization.updateDepartment({ ...req.body, workspaceId: workspace(req), actorId: actor(req), id: req.params.id });
     return res.json({ success: true, data });
   }));
 
@@ -68,12 +68,12 @@ export function createOrganizationRoutes({ models, middlewares = {}, validators,
   }));
 
   router.get('/areas', usePermission(checkPermission, 'view.areas'), asyncRoute(async (req, res) => {
-    const data = await organization.listAreas({ workspaceId: workspace(req), ...req.query });
+    const data = await organization.listAreas({ ...req.query, workspaceId: workspace(req) });
     return res.json({ success: true, data });
   }));
 
   router.post('/areas', checkPlanLimit ? checkPlanLimit('areas') : noOp, usePermission(checkPermission, 'create.areas'), asyncRoute(async (req, res) => {
-    const data = await organization.createArea({ workspaceId: workspace(req), actorId: actor(req), ...req.body });
+    const data = await organization.createArea({ ...req.body, workspaceId: workspace(req), actorId: actor(req) });
     return res.status(201).json({ success: true, data });
   }));
 
@@ -83,7 +83,7 @@ export function createOrganizationRoutes({ models, middlewares = {}, validators,
   }));
 
   router.put('/areas/:id', usePermission(checkPermission, 'update.areas'), asyncRoute(async (req, res) => {
-    const data = await organization.updateArea({ workspaceId: workspace(req), actorId: actor(req), id: req.params.id, ...req.body });
+    const data = await organization.updateArea({ ...req.body, workspaceId: workspace(req), actorId: actor(req), id: req.params.id });
     return res.json({ success: true, data });
   }));
 
@@ -93,12 +93,12 @@ export function createOrganizationRoutes({ models, middlewares = {}, validators,
   }));
 
   router.get('/memberships', usePermission(checkPermission, 'view.organization'), asyncRoute(async (req, res) => {
-    const data = await organization.listMemberships({ workspaceId: workspace(req), ...req.query });
+    const data = await organization.listMemberships({ ...req.query, workspaceId: workspace(req) });
     return res.json({ success: true, data });
   }));
 
   router.post('/memberships', usePermission(checkPermission, 'manage.organization'), asyncRoute(async (req, res) => {
-    const data = await organization.upsertMembership({ workspaceId: workspace(req), actorId: actor(req), ...req.body });
+    const data = await organization.upsertMembership({ ...req.body, workspaceId: workspace(req), actorId: actor(req) });
     return res.status(201).json({ success: true, data });
   }));
 
@@ -108,12 +108,12 @@ export function createOrganizationRoutes({ models, middlewares = {}, validators,
   }));
 
   router.get('/routing-rules', usePermission(checkPermission, 'view.routing'), asyncRoute(async (req, res) => {
-    const data = await organization.listRoutingRules({ workspaceId: workspace(req), ...req.query });
+    const data = await organization.listRoutingRules({ ...req.query, workspaceId: workspace(req) });
     return res.json({ success: true, data });
   }));
 
   router.post('/routing-rules', checkPlanLimit ? checkPlanLimit('routing_rules') : noOp, usePermission(checkPermission, 'manage.routing'), asyncRoute(async (req, res) => {
-    const data = await organization.createRoutingRule({ workspaceId: workspace(req), actorId: actor(req), ...req.body });
+    const data = await organization.createRoutingRule({ ...req.body, workspaceId: workspace(req), actorId: actor(req) });
     return res.status(201).json({ success: true, data });
   }));
 
@@ -123,7 +123,7 @@ export function createOrganizationRoutes({ models, middlewares = {}, validators,
   }));
 
   router.put('/routing-rules/:id', usePermission(checkPermission, 'manage.routing'), asyncRoute(async (req, res) => {
-    const data = await organization.updateRoutingRule({ workspaceId: workspace(req), actorId: actor(req), id: req.params.id, ...req.body });
+    const data = await organization.updateRoutingRule({ ...req.body, workspaceId: workspace(req), actorId: actor(req), id: req.params.id });
     return res.json({ success: true, data });
   }));
 
@@ -133,7 +133,7 @@ export function createOrganizationRoutes({ models, middlewares = {}, validators,
   }));
 
   router.post('/assignment-events', usePermission(checkPermission, 'assign.conversations'), asyncRoute(async (req, res) => {
-    const data = await organization.recordAssignment({ workspaceId: workspace(req), actorId: actor(req), ...req.body });
+    const data = await organization.recordAssignment({ ...req.body, workspaceId: workspace(req), actorId: actor(req) });
     return res.status(201).json({ success: true, data });
   }));
 
