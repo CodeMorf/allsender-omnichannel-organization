@@ -59,6 +59,25 @@ const matchConditions = (input, conditions = {}) => {
   return true;
 };
 
+const normalizeRatingRules = (value) => {
+  if (!Array.isArray(value)) throw new Error('rating_rules must be an array');
+  const rules = value.map((rule, index) => {
+    const min = Number(rule?.min);
+    const max = Number(rule?.max);
+    const label = String(rule?.label || '').trim();
+    if (!Number.isInteger(min) || min < 1 || min > 5 || !Number.isInteger(max) || max < 1 || max > 5 || min > max) {
+      throw new Error(`rating_rules[${index}] must define an integer range from 1 to 5`);
+    }
+    if (label.length > 1000) throw new Error(`rating_rules[${index}].label cannot exceed 1000 characters`);
+    return { min, max, label };
+  });
+  const ordered = [...rules].sort((left, right) => left.min - right.min || left.max - right.max);
+  for (let index = 1; index < ordered.length; index += 1) {
+    if (ordered[index].min <= ordered[index - 1].max) throw new Error('rating_rules cannot contain overlapping ranges');
+  }
+  return rules;
+};
+
 const ensureWorkspaceResource = async (Model, id, workspaceId, label) => {
   const resource = await Model.findOne({ _id: asId(id, label), workspace_id: asId(workspaceId, 'workspace_id'), deleted_at: null });
   if (!resource) throw new Error(`${label} not found in this workspace`);
@@ -122,6 +141,9 @@ class OrganizationService {
     const sections = ['general', 'chat', 'assignment', 'business_hours', 'resolution', 'satisfaction', 'ai'];
     if (!sections.includes(section)) throw new Error('Invalid department settings section');
     if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('Settings data must be an object');
+    if (section === 'satisfaction' && data.rating_rules !== undefined) {
+      data = { ...data, rating_rules: normalizeRatingRules(data.rating_rules) };
+    }
     for (const teamId of section === 'assignment' ? [...(data.team_ids || []), data.default_team_id].filter(Boolean) : []) await this.validateExternalReference('team', teamId, workspaceId, 'team_id');
     if (section === 'general' && data.responsible_user_id) await this.validateExternalReference('user', data.responsible_user_id, workspaceId, 'responsible_user_id');
     if (section === 'ai' && data.agent_id) await this.validateExternalReference('user', data.agent_id, workspaceId, 'agent_id');

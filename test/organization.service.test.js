@@ -19,6 +19,49 @@ test('empty routing conditions are a catch-all rule', () => {
   assert.equal(matchConditions({ platform: 'whatsapp', text: 'hola' }, {}), true);
 });
 
+test('satisfaction rating rules reject overlaps and persist valid ranges', async () => {
+  const workspaceId = '507f1f77bcf86cd799439011';
+  const departmentId = '507f1f77bcf86cd799439012';
+  const actorId = '507f1f77bcf86cd799439013';
+  const updates = [];
+  const service = createOrganizationService({
+    Department: {
+      findOne: async () => ({ _id: departmentId, workspace_id: workspaceId })
+    },
+    DepartmentSettings: {
+      findOneAndUpdate: (query, update) => {
+        updates.push({ query, update });
+        return { lean: async () => update.$set.satisfaction };
+      }
+    }
+  });
+
+  await assert.rejects(
+    service.updateDepartmentSettings({
+      workspaceId,
+      actorId,
+      id: departmentId,
+      section: 'satisfaction',
+      data: { rating_rules: [{ min: 1, max: 3, label: 'Bajo' }, { min: 3, max: 5, label: 'Alto' }] }
+    }),
+    /overlapping ranges/
+  );
+
+  const result = await service.updateDepartmentSettings({
+    workspaceId,
+    actorId,
+    id: departmentId,
+    section: 'satisfaction',
+    data: { enabled: true, rating_rules: [{ min: 1, max: 2, label: 'Bajo' }, { min: 4, max: 5, label: 'Alto' }] }
+  });
+
+  assert.deepEqual(result.rating_rules, [
+    { min: 1, max: 2, label: 'Bajo' },
+    { min: 4, max: 5, label: 'Alto' }
+  ]);
+  assert.equal(updates.length, 1);
+});
+
 test('department-level membership removal targets the null-area membership', async () => {
   const queries = [];
   const service = createOrganizationService({
