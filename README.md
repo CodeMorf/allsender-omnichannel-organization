@@ -120,7 +120,13 @@ La IA es opcional. `disabled` mantiene el flujo humano; `assistant`, `first` y
 La configuración permite
 fallback y transferencia a humano, pero el módulo no inventa un runtime de IA:
 el host debe conectar esas decisiones con su flujo de Inbox y registrar el
-evento de transferencia.
+evento de transferencia. Los motivos configurados deben llegar al prompt del
+chatbot y el motivo reconocido debe quedar auditado en la conversación.
+
+Satisfacción admite respuestas por rango sin solapamientos. Cuando el canal
+WhatsApp ofrece mensajes interactivos y se selecciona `interactive_list`, el
+host puede enviar las cinco opciones como una lista; en los demás canales debe
+conservar un fallback textual compatible.
 
 ## Validación local
 
