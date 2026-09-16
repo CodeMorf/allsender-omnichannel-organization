@@ -2,7 +2,7 @@
 
 ## API host
 
-1. Register the five models in the API model index or pass them directly to the
+1. Register the organization models in the API model index or pass them directly to the
    module registration function.
 2. Register the module after authentication and before the application error
    handler.
@@ -17,19 +17,22 @@
    validators: {
      team: async ({ id, workspaceId }) => assertTeamBelongsToOwner(id, workspaceId),
      user: async ({ id, workspaceId }) => assertUserCanOperateInWorkspace(id, workspaceId),
-     contact: async ({ id, workspaceId }) => assertContactBelongsToWorkspace(id, workspaceId)
+     contact: async ({ id, workspaceId }) => assertContactBelongsToWorkspace(id, workspaceId),
+     connection: async ({ id, workspaceId }) => assertConnectionBelongsToWorkspace(id, workspaceId),
+     flow: async ({ id, workspaceId }) => assertFlowBelongsToWorkspace(id, workspaceId)
    }
    ```
 
-   The module rejects non-null `team_id`, `supervisor_id`, `user_id` or
+   The module rejects non-null `team_id`, `supervisor_id`, `user_id`, `connection_id` or
    `contact_id` values
    when the corresponding validator is not installed.
 6. Add the permission slugs from the README to the existing permission catalog.
 7. Add `departments`, `areas` and `routing_rules` to the plan-limit catalog only
    if the corresponding plan feature exists. Do not enable a missing plan key
    silently.
-8. Add a host adapter that validates existing `Team`, `User`, `Contact` and
-   `ChatAssignment` references before saving an operational relationship.
+8. Add a host adapter that validates existing `Team`, `User`, `Contact`,
+   connections, automation flows and `ChatAssignment` references before saving
+   an operational relationship.
 
 The repository includes `createAllSenderOrganizationHostAdapter` as a starting
 adapter for the current AllSender schemas. It resolves the selected workspace
@@ -46,7 +49,8 @@ before enabling writes.
 3. Add filters to the human inbox only after API routing and authorization are
    verified.
 4. Translate all labels in Spanish and English.
-5. Keep the AI controls hidden or disabled in this first integration.
+5. Expose IA como una opción del departamento, conectada a los agentes IA y al
+   flujo de handoff que ya existen en AllSender. No construyas otro runtime IA.
 
 ## Compatibility
 
@@ -56,3 +60,7 @@ before enabling writes.
 - Do not move historical contacts during the first rollout.
 - Do not make a department or area required for existing records until a
   dry-run migration proves that all records have a valid workspace.
+- `area_id` is optional for new memberships and routing targets; historical
+  memberships and rules that contain an area remain valid.
+- Save each department settings section independently. A disabled or inherited
+  section must not block saving an unrelated section.

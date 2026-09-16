@@ -4,6 +4,7 @@ import Area from '../models/area.model.js';
 import OrganizationMembership from '../models/organization-membership.model.js';
 import RoutingRule from '../models/routing-rule.model.js';
 import AssignmentEvent from '../models/assignment-event.model.js';
+import DepartmentSettings from '../models/department-settings.model.js';
 
 const DEFAULT_LIMIT = 25;
 const MAX_LIMIT = 100;
@@ -71,6 +72,7 @@ class OrganizationService {
     this.Membership = models.OrganizationMembership || OrganizationMembership;
     this.RoutingRule = models.RoutingRule || RoutingRule;
     this.AssignmentEvent = models.AssignmentEvent || AssignmentEvent;
+    this.DepartmentSettings = models.DepartmentSettings || DepartmentSettings;
     this.validators = validators;
   }
 
@@ -108,6 +110,29 @@ class OrganizationService {
 
   async getDepartment({ workspaceId, id }) {
     return ensureWorkspaceResource(this.Department, id, workspaceId, 'Department');
+  }
+
+  async getDepartmentSettings({ workspaceId, id }) {
+    const department = await this.getDepartment({ workspaceId, id });
+    return this.DepartmentSettings.findOneAndUpdate({ workspace_id: department.workspace_id, department_id: department._id }, { $setOnInsert: { workspace_id: department.workspace_id, department_id: department._id } }, { upsert: true, new: true, setDefaultsOnInsert: true, runValidators: true }).lean();
+  }
+
+  async updateDepartmentSettings({ workspaceId, actorId, id, section, data = {} }) {
+    const department = await this.getDepartment({ workspaceId, id });
+    const sections = ['general', 'chat', 'assignment', 'business_hours', 'resolution', 'satisfaction', 'ai'];
+    if (!sections.includes(section)) throw new Error('Invalid department settings section');
+    if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('Settings data must be an object');
+    for (const teamId of section === 'assignment' ? [...(data.team_ids || []), data.default_team_id].filter(Boolean) : []) await this.validateExternalReference('team', teamId, workspaceId, 'team_id');
+    if (section === 'general' && data.responsible_user_id) await this.validateExternalReference('user', data.responsible_user_id, workspaceId, 'responsible_user_id');
+    if (section === 'ai' && data.agent_id) await this.validateExternalReference('user', data.agent_id, workspaceId, 'agent_id');
+    if (section === 'chat' && data.flow_id) await this.validateExternalReference('flow', data.flow_id, workspaceId, 'flow_id');
+    return this.DepartmentSettings.findOneAndUpdate({ workspace_id: department.workspace_id, department_id: department._id }, { $set: { [section]: data, updated_by: asId(actorId, 'updated_by') }, $setOnInsert: { workspace_id: department.workspace_id, department_id: department._id } }, { upsert: true, new: true, setDefaultsOnInsert: true, runValidators: true }).lean();
+  }
+
+  async getDepartmentSummary({ workspaceId, id }) {
+    const department = await this.getDepartment({ workspaceId, id });
+    const [settings, agentsCount] = await Promise.all([this.getDepartmentSettings({ workspaceId, id }), this.Membership.countDocuments({ workspace_id: department.workspace_id, department_id: department._id, status: 'active', deleted_at: null })]);
+    return { department, settings, agentsCount, openConversations: null };
   }
 
   async updateDepartment({ workspaceId, actorId, id, ...data }) {
@@ -194,12 +219,12 @@ class OrganizationService {
   async upsertMembership({ workspaceId, actorId, departmentId, areaId, userId, teamId = null, role = 'member' }) {
     const workspace = asId(workspaceId, 'workspace_id');
     const department = await ensureWorkspaceResource(this.Department, departmentId, workspace, 'Department');
-    const area = await ensureWorkspaceResource(this.Area, areaId, workspace, 'Area');
-    if (String(area.department_id) !== String(department._id)) throw new Error('Area does not belong to the selected department');
+    const area = areaId ? await ensureWorkspaceResource(this.Area, areaId, workspace, 'Area') : null;
+    if (area && String(area.department_id) !== String(department._id)) throw new Error('Area does not belong to the selected department');
     const user = asId(userId, 'user_id');
     await this.validateExternalReference('user', userId, workspaceId, 'user_id');
     await this.validateExternalReference('team', teamId, workspaceId, 'team_id');
-    const query = { workspace_id: workspace, department_id: department._id, area_id: area._id, user_id: user };
+    const query = { workspace_id: workspace, department_id: department._id, area_id: area?._id || null, user_id: user };
     return this.Membership.findOneAndUpdate(query, { $set: { team_id: teamId ? asId(teamId, 'team_id') : null, role, status: 'active', created_by: asId(actorId, 'created_by'), deleted_at: null } }, { upsert: true, new: true, setDefaultsOnInsert: true, runValidators: true }).lean();
   }
 
@@ -220,11 +245,11 @@ class OrganizationService {
   async createRoutingRule({ workspaceId, actorId, name, description, priority = 100, conditions = {}, target }) {
     const workspace = asId(workspaceId, 'workspace_id');
     const department = await ensureWorkspaceResource(this.Department, target?.department_id, workspace, 'Department');
-    const area = await ensureWorkspaceResource(this.Area, target?.area_id, workspace, 'Area');
-    if (String(area.department_id) !== String(department._id)) throw new Error('Routing target area does not belong to the target department');
+    const area = target?.area_id ? await ensureWorkspaceResource(this.Area, target.area_id, workspace, 'Area') : null;
+    if (area && String(area.department_id) !== String(department._id)) throw new Error('Routing target area does not belong to the target department');
     const clean = cleanName(name, 'Routing rule name');
     await this.validateExternalReference('team', target.team_id, workspaceId, 'team_id');
-    return this.RoutingRule.create({ workspace_id: workspace, name: clean, description: description ? String(description).trim() : null, priority: Number(priority) || 100, conditions: normalizeConditions(conditions), target: { department_id: department._id, area_id: area._id, team_id: target.team_id ? asId(target.team_id, 'team_id') : null, assignment_mode: target.assignment_mode || 'queue' }, created_by: asId(actorId, 'created_by') });
+    return this.RoutingRule.create({ workspace_id: workspace, name: clean, description: description ? String(description).trim() : null, priority: Number(priority) || 100, conditions: normalizeConditions(conditions), target: { department_id: department._id, area_id: area?._id || null, team_id: target.team_id ? asId(target.team_id, 'team_id') : null, assignment_mode: target.assignment_mode || 'queue' }, created_by: asId(actorId, 'created_by') });
   }
 
   async listRoutingRules({ workspaceId, status } = {}) {
@@ -244,10 +269,10 @@ class OrganizationService {
     if (data.conditions !== undefined) update.conditions = normalizeConditions(data.conditions);
     if (data.target !== undefined) {
       const department = await ensureWorkspaceResource(this.Department, data.target?.department_id, workspaceId, 'Department');
-      const area = await ensureWorkspaceResource(this.Area, data.target?.area_id, workspaceId, 'Area');
-      if (String(area.department_id) !== String(department._id)) throw new Error('Routing target area does not belong to the target department');
+      const area = data.target?.area_id ? await ensureWorkspaceResource(this.Area, data.target.area_id, workspaceId, 'Area') : null;
+      if (area && String(area.department_id) !== String(department._id)) throw new Error('Routing target area does not belong to the target department');
       await this.validateExternalReference('team', data.target.team_id, workspaceId, 'team_id');
-      update.target = { department_id: department._id, area_id: area._id, team_id: data.target.team_id ? asId(data.target.team_id, 'team_id') : null, assignment_mode: data.target.assignment_mode || 'queue' };
+      update.target = { department_id: department._id, area_id: area?._id || null, team_id: data.target.team_id ? asId(data.target.team_id, 'team_id') : null, assignment_mode: data.target.assignment_mode || 'queue' };
     }
     return this.RoutingRule.findOneAndUpdate({ _id: current._id, workspace_id: current.workspace_id, deleted_at: null }, { $set: update }, { new: true, runValidators: true }).lean();
   }

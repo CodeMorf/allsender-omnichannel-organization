@@ -1,4 +1,4 @@
-import type { Area, Department, OrganizationApiOptions, OrganizationMembership, RoutingRule } from './types';
+import type { Area, Department, DepartmentSettings, OrganizationApiOptions, OrganizationMembership, RoutingRule } from './types';
 
 type ApiResponse<T> = { success: boolean; data: T; message?: string };
 
@@ -19,11 +19,17 @@ export function createOrganizationApi(options: OrganizationApiOptions) {
 
   const json = (body: Record<string, unknown>): RequestInit => ({ method: 'POST', body: JSON.stringify(body) });
   const put = (body: Record<string, unknown>): RequestInit => ({ method: 'PUT', body: JSON.stringify(body) });
+  const patch = (body: Record<string, unknown>): RequestInit => ({ method: 'PATCH', body: JSON.stringify(body) });
 
   return {
     listDepartments: (workspaceId: string, query = '') => request<{ items: Department[]; pagination: unknown }>(`/departments?workspace_id=${encodeURIComponent(workspaceId)}${query}`, {}, workspaceId),
     createDepartment: (workspaceId: string, body: Record<string, unknown>) => request<Department>('/departments', json({ ...body, workspace_id: workspaceId }), workspaceId),
     getDepartment: (workspaceId: string, id: string) => request<Department>(`/departments/${encodeURIComponent(id)}?workspace_id=${encodeURIComponent(workspaceId)}`, {}, workspaceId),
+    getDepartmentSettings: (workspaceId: string, id: string) => request<DepartmentSettings>(`/departments/${encodeURIComponent(id)}/settings?workspace_id=${encodeURIComponent(workspaceId)}`, {}, workspaceId),
+    updateDepartmentSettings: (workspaceId: string, id: string, section: string, body: Record<string, unknown>) => request<DepartmentSettings>(`/departments/${encodeURIComponent(id)}/settings/${encodeURIComponent(section)}?workspace_id=${encodeURIComponent(workspaceId)}`, patch(body), workspaceId),
+    getDepartmentSummary: (workspaceId: string, id: string) => request<{ department: Department; settings: DepartmentSettings; agentsCount: number; openConversations: number | null }>(`/departments/${encodeURIComponent(id)}/summary?workspace_id=${encodeURIComponent(workspaceId)}`, {}, workspaceId),
+    listDepartmentMembers: (workspaceId: string, id: string) => request<OrganizationMembership[]>(`/departments/${encodeURIComponent(id)}/members?workspace_id=${encodeURIComponent(workspaceId)}`, {}, workspaceId),
+    addDepartmentMember: (workspaceId: string, id: string, body: Record<string, unknown>) => request<OrganizationMembership>(`/departments/${encodeURIComponent(id)}/members`, json({ ...body, workspace_id: workspaceId }), workspaceId),
     updateDepartment: (workspaceId: string, id: string, body: Record<string, unknown>) => request<Department>(`/departments/${encodeURIComponent(id)}`, put({ ...body, workspace_id: workspaceId }), workspaceId),
     deleteDepartment: (workspaceId: string, id: string) => request<Department>(`/departments/${encodeURIComponent(id)}?workspace_id=${encodeURIComponent(workspaceId)}`, { method: 'DELETE' }, workspaceId),
     listAreas: (workspaceId: string, query = '') => request<{ items: Area[]; pagination: unknown }>(`/areas?workspace_id=${encodeURIComponent(workspaceId)}${query}`, {}, workspaceId),

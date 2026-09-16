@@ -57,6 +57,31 @@ export function createOrganizationRoutes({ models, middlewares = {}, validators,
     return res.json({ success: true, data });
   }));
 
+  router.get('/departments/:id/settings', usePermission(checkPermission, 'view.departments'), asyncRoute(async (req, res) => {
+    const data = await organization.getDepartmentSettings({ workspaceId: workspace(req), id: req.params.id });
+    return res.json({ success: true, data });
+  }));
+
+  router.patch('/departments/:id/settings/:section', usePermission(checkPermission, 'update.departments'), asyncRoute(async (req, res) => {
+    const data = await organization.updateDepartmentSettings({ workspaceId: workspace(req), actorId: actor(req), id: req.params.id, section: req.params.section, data: req.body });
+    return res.json({ success: true, data });
+  }));
+
+  router.get('/departments/:id/summary', usePermission(checkPermission, 'view.departments'), asyncRoute(async (req, res) => {
+    const data = await organization.getDepartmentSummary({ workspaceId: workspace(req), id: req.params.id });
+    return res.json({ success: true, data });
+  }));
+
+  router.get('/departments/:id/members', usePermission(checkPermission, 'view.organization'), asyncRoute(async (req, res) => {
+    const data = await organization.listMemberships({ workspaceId: workspace(req), departmentId: req.params.id, areaId: req.query.areaId });
+    return res.json({ success: true, data });
+  }));
+
+  router.post('/departments/:id/members', usePermission(checkPermission, 'manage.organization'), asyncRoute(async (req, res) => {
+    const data = await organization.upsertMembership({ ...req.body, departmentId: req.params.id, workspaceId: workspace(req), actorId: actor(req) });
+    return res.status(201).json({ success: true, data });
+  }));
+
   router.put('/departments/:id', usePermission(checkPermission, 'update.departments'), asyncRoute(async (req, res) => {
     const data = await organization.updateDepartment({ ...req.body, workspaceId: workspace(req), actorId: actor(req), id: req.params.id });
     return res.json({ success: true, data });

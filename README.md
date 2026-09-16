@@ -1,50 +1,46 @@
 # AllSender Omnichannel Organization
 
-Módulo integrable para organizar la atención humana de AllSender por workspace,
-departamento, área, equipo y agente. La primera versión no depende de IA y no
-envía mensajes automáticamente.
-
-## Objetivo
-
-Este repositorio contiene el contrato y la implementación de referencia para:
-
-- Departamentos y áreas aislados por `workspace_id`.
-- Relación operativa con los equipos y agentes existentes.
-- Asignación manual y routing humano por reglas sencillas.
-- Permisos separados de los permisos actuales de `Team`.
-- Auditoría de asignaciones.
-- Cliente de API para integrar la interfaz principal.
-
-El módulo no sustituye al `Team` actual. AllSender ya utiliza `Team` y
-`TeamPermission` para agrupar agentes y permisos. La integración conserva
-`User.team_id`, `Contact.assigned_to` y `ChatAssignment` durante la migración.
-
-## Estado
-
-La base inicial contiene modelos, servicio, rutas, registro para Express,
-contrato de API, cliente web y pruebas de dominio. La integración en los
-repositorios de producción de API y plataforma es un paso posterior y separado.
-No se incluyen credenciales, datos reales, migraciones destructivas ni cambios
-de producción.
-
-## Arquitectura
+Módulo integrable para convertir un departamento de AllSender en una unidad
+operativa de atención omnicanal. La jerarquía principal es:
 
 ```text
-Workspace
-└── Department
-    └── Area
-        ├── Team existente
-        ├── miembros/agentes
-        └── reglas de routing humano
+Workspace → Departamento → Team → agente humano o agente IA
+                         ↘ Área opcional (configuración avanzada)
 ```
 
-La autorización debe comprobar siempre el workspace además del identificador
-del recurso. Un `_id` válido por sí solo nunca autoriza acceso.
+Un departamento puede funcionar únicamente con nombre. Cuando se necesita más
+control, reutiliza los teams, usuarios, conexiones, automatizaciones, horarios,
+Inbox, permisos y agentes IA que ya existen en AllSender. El módulo no crea un
+segundo sistema de usuarios, teams, chatbot, conexiones, IA ni horarios.
+
+## Qué incluye
+
+- Departamentos aislados por `workspace_id`, con borrado lógico y compatibilidad
+  con áreas existentes.
+- Configuración independiente de canales y bienvenida, team y asignación,
+  horarios, resolución, satisfacción y IA opcional.
+- Membresías Department → Team → agente sin modificar `User.team_id`; un agente
+  puede pertenecer a varios departamentos.
+- Routing con destino `department_id` obligatorio y `area_id`/`team_id` opcionales.
+- Validación de workspace para departamentos, áreas, teams, agentes, contactos,
+  automatizaciones y conexiones.
+- Auditoría de asignaciones mediante el flujo existente de conversaciones y
+  `ChatAssignment`; resolver una regla por sí solo no envía mensajes.
+- Cliente de API y contrato para integrar la pantalla de Departamentos de la
+  plataforma AllSender.
+
+## Estado de integración
+
+El contrato, los modelos y las rutas de referencia están preparados para el
+host AllSender. La integración productiva debe inyectar los modelos reales,
+middlewares, resolver de workspace y validadores del host. No se incluyen
+credenciales ni migraciones destructivas.
+
+La pantalla recomendada es una página propia por departamento, con navegación
+por secciones y guardado independiente. La alta rápida ofrece únicamente:
+nombre, descripción, color, conexiones, team principal y agentes opcionales.
 
 ## Integración con la API actual
-
-El backend se registra mediante inyección de dependencias para reutilizar los
-middlewares y modelos que ya existen en AllSender:
 
 ```js
 import { registerOrganizationModule } from '@allsender/omnichannel-organization/backend/integration/register.js';
@@ -52,47 +48,54 @@ import { registerOrganizationModule } from '@allsender/omnichannel-organization/
 registerOrganizationModule({
   app,
   apiPrefix: '/api',
-  models: { Department, Area, OrganizationMembership, RoutingRule, AssignmentEvent },
-  middlewares: {
-    authenticate,
-    requireSubscription,
-    checkPermission,
-    checkPlanLimit
-  }
+  models: {
+    Department, Area, OrganizationMembership, RoutingRule, AssignmentEvent,
+    DepartmentSettings
+  },
+  middlewares: { authenticate, requireSubscription, checkPermission, checkPlanLimit },
+  validators: { team, user, contact, connection, flow },
+  resolveWorkspaceId
 });
 ```
 
-El registro monta:
+El registro monta `/api/organization`. Las operaciones de configuración son:
 
 ```text
-/api/organization/departments
-/api/organization/areas
-/api/organization/memberships
-/api/organization/routing-rules
+GET   /departments
+POST  /departments
+GET   /departments/:id
+PUT   /departments/:id
+DELETE /departments/:id
+GET   /departments/:id/settings
+PATCH /departments/:id/settings/:section
+GET   /departments/:id/summary
+GET   /departments/:id/members
+POST  /departments/:id/members
+GET   /departments/:id/connections
+PUT   /departments/:id/connections
 ```
 
-La integración real debe conectarse al `Workspace`, `User`, `Team`, `Contact`
-y `ChatAssignment` existentes mediante un adaptador del host. Este repositorio
-no crea una segunda autenticación ni una segunda base de usuarios.
+Las rutas históricas de áreas, membresías, reglas y eventos se conservan.
 
 ## Permisos
 
+El host debe registrar en su catálogo existente, como mínimo:
+
 ```text
-view.departments       create.departments       update.departments       delete.departments
-view.areas             create.areas             update.areas             delete.areas
-view.organization      manage.organization     view.routing             manage.routing
-assign.conversations   view.organization_reports
+view.departments       create.departments       update.departments
+delete.departments     manage.organization      view.routing
+manage.routing         assign.conversations
 ```
 
-La aplicación anfitriona decide cómo registrar estos permisos en su catálogo.
-El módulo solo los exige en las rutas.
+Los permisos se evalúan con el RBAC de AllSender; no se crea otro sistema.
 
-## IA
+## IA y transferencia
 
-La IA no forma parte de la primera versión. El campo de política de IA no se
-usa para enrutar ni responder. En una fase posterior podrá añadirse como
-consumidor opcional del contexto del área, empezando por sugerencias aprobadas
-por un humano.
+La IA es opcional. `disabled` mantiene el flujo humano; `assistant`, `first` y
+`automatic` reutilizan los agentes IA existentes. La configuración permite
+fallback y transferencia a humano, pero el módulo no inventa un runtime de IA:
+el host debe conectar esas decisiones con su flujo de Inbox y registrar el
+evento de transferencia.
 
 ## Validación local
 
@@ -101,6 +104,7 @@ npm install
 npm run validate
 ```
 
-Antes de integrar en producción todavía deben ejecutarse las pruebas contra la
-API real, los permisos reales, MongoDB, los flujos de conversación y el build
-de la plataforma anfitriona.
+Antes de declarar una integración completa hay que probar en el host real:
+aislamiento entre workspaces, permisos de un cliente no administrador,
+conexiones activas, creación de agentes, recepción en Inbox, round-robin,
+horarios, cierre, CSAT, traducciones, IA/handoff y build de la plataforma.

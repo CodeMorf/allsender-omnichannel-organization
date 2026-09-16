@@ -13,7 +13,7 @@ const routingRuleSchema = new mongoose.Schema({
   },
   target: {
     department_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Department', required: true },
-    area_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Area', required: true },
+    area_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Area', required: false, default: null },
     team_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Team', default: null },
     assignment_mode: { type: String, enum: ['queue', 'round_robin', 'manual'], default: 'queue' }
   },

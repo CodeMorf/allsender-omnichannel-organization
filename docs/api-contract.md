@@ -1,67 +1,113 @@
-# API contract
+# Contrato de API de Organización AllSender
 
-The module is mounted below `/api/organization` by the host application.
+El host monta el módulo debajo de `/api/organization`. Todas las operaciones
+requieren autenticación, suscripción válida, permiso RBAC y un workspace
+validado por el servidor. Un `workspace_id` enviado por el cliente nunca debe
+ser la única decisión de autorización.
 
-All requests require a validated workspace context. The host resolver may read
-the selected workspace from the authenticated session, but must verify that the
-requesting user can access it. A client-supplied `workspace_id` is only an
-input to that resolver; it is not an authorization decision.
-
-## Resources
+## Departamentos y configuración
 
 ```text
-GET    /departments
-POST   /departments
-GET    /departments/:id
-PUT    /departments/:id
-DELETE /departments/:id
+GET     /departments
+POST    /departments
+GET     /departments/:id
+PUT     /departments/:id
+DELETE  /departments/:id
 
-GET    /areas
-POST   /areas
-GET    /areas/:id
-PUT    /areas/:id
-DELETE /areas/:id
-
-GET    /memberships
-POST   /memberships
-DELETE /memberships/:areaId/:userId
-
-GET    /routing-rules
-POST   /routing-rules
-PUT    /routing-rules/:id
-DELETE /routing-rules/:id
-POST   /routing-rules/resolve
-
-POST   /assignment-events
+GET     /departments/:id/settings
+PATCH   /departments/:id/settings/general
+PATCH   /departments/:id/settings/chat
+PATCH   /departments/:id/settings/assignment
+PATCH   /departments/:id/settings/business_hours
+PATCH   /departments/:id/settings/resolution
+PATCH   /departments/:id/settings/satisfaction
+PATCH   /departments/:id/settings/ai
+GET     /departments/:id/summary
 ```
 
-## Create department
+La configuración está separada de la identidad de `Department` en la relación
+única `(workspace_id, department_id)`. Cada sección se guarda de forma
+independiente; guardar horario no debe validar ni modificar IA o CSAT.
+
+## Creación rápida
 
 ```json
 {
-  "name": "Comercial",
-  "description": "Atención de oportunidades y ventas",
-  "status": "active",
-  "sort_order": 10
-}
-```
-
-## Create area
-
-```json
-{
-  "department_id": "<department-id>",
   "name": "Ventas",
-  "default_team_id": "<existing-team-id>",
-  "supervisor_id": "<existing-user-id>"
+  "description": "Atención comercial y nuevos clientes",
+  "status": "active"
 }
 ```
 
-## Create routing rule
+La aplicación puede guardar después, por separado:
 
 ```json
 {
-  "name": "Instagram ventas",
+  "connection_ids": ["<existing-connection-id>"],
+  "greeting": "Hola {{contact.name}}, ¿cómo podemos ayudarte?",
+  "flow_id": null,
+  "flow_enabled": false
+}
+```
+
+## Miembros, teams y áreas
+
+```text
+GET     /departments/:id/members
+POST    /departments/:id/members
+DELETE  /departments/:id/members/:userId
+
+GET     /memberships
+POST    /memberships
+DELETE  /memberships/:areaId/:userId
+
+GET     /areas
+POST    /areas
+GET     /areas/:id
+PUT     /areas/:id
+DELETE  /areas/:id
+```
+
+Una membresía nueva requiere `department_id` y `user_id`; `area_id` y `team_id`
+son opcionales. Los registros históricos que ya tienen área continúan siendo
+válidos. El team seleccionado es una referencia al `Team` existente y nunca
+reescribe `User.team_id`.
+
+```json
+{
+  "userId": "<existing-agent-id>",
+  "teamId": "<existing-team-id>",
+  "areaId": null,
+  "role": "member"
+}
+```
+
+## Conexiones
+
+```text
+GET /departments/:id/connections
+PUT /departments/:id/connections
+```
+
+El `PUT` recibe una lista de identificadores de conexiones que ya existen en
+AllSender. El host debe comprobar que cada conexión pertenece al workspace,
+está activa y puede ser utilizada por el usuario autenticado. No se almacenan
+tokens en esta configuración.
+
+## Routing
+
+```text
+GET     /routing-rules
+POST    /routing-rules
+PUT     /routing-rules/:id
+DELETE  /routing-rules/:id
+POST    /routing-rules/resolve
+POST    /assignment-events
+```
+
+```json
+{
+  "name": "Consultas de ventas",
   "priority": 10,
   "conditions": {
     "platform": "instagram",
@@ -69,14 +115,38 @@ POST   /assignment-events
   },
   "target": {
     "department_id": "<department-id>",
-    "area_id": "<area-id>",
+    "area_id": null,
     "team_id": "<existing-team-id>",
     "assignment_mode": "round_robin"
   }
 }
 ```
 
-`POST /routing-rules/resolve` only calculates the first matching target. It
-does not assign a conversation, send a message, invoke AI or mutate a contact.
-The host application must perform the assignment through its existing
-conversation/ChatAssignment flow and then record an assignment event.
+`department_id` es obligatorio; `area_id` y `team_id` son opcionales. Resolver
+una regla solo calcula el destino. El host debe aplicar ese destino a su flujo
+existente de Inbox/`ChatAssignment` y registrar un `assignment-event`; la
+resolución no envía mensajes, no invoca IA y no modifica contactos por sí sola.
+
+## Estructura de `DepartmentSettings`
+
+```text
+general:          color, responsible_user_id, default_team_id
+chat:             connection_ids, greeting, translations, flow_id, flow_enabled
+assignment:       mode, assign_offline, redistribute_unavailable,
+                  allow_ai_first, team_ids, default_team_id
+business_hours:   mode, timezone, enabled, schedule, away_message,
+                  after_hours_behavior
+resolution:       mode, reason_requirement, auto_close, close_after_minutes,
+                  notify_before_minutes, notification_message, send_farewell,
+                  close_ai_chats
+satisfaction:     enabled, send_on_auto_close, type, request_message,
+                  thank_you_message, request_comment, comment_timeout,
+                  comment_message, rating_rules, translations
+ai:               mode, agent_id, response_language, similarity_threshold,
+                  prompt_override, fallback_message, human_handoff,
+                  human_handoff_message, handoff_reasons
+```
+
+Los modos `inherit`, `custom` y `disabled` permiten que horario, resolución e
+IA hereden la configuración de empresa sin obligar al usuario a conocer la
+implementación interna.

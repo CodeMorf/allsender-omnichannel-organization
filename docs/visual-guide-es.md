@@ -1,261 +1,176 @@
-# Guía visual y de configuración — Organización AllSender
+# Guía visual y de configuración — AllSender
 
-## Dónde aparecerá
+## Dónde aparece
 
-La entrada se ubicará en la aplicación principal de AllSender, dentro de la
-sección que hoy aparece como **Organization Teams** (`/organization_teams`).
+La entrada se encuentra en la aplicación principal de AllSender, en
+**Organización → Departamentos** (`/organization`). `wapi-admin` conserva la
+administración global y no sustituye la pantalla operativa del cliente.
 
-Durante la integración se conservará la ruta actual para no romper enlaces ni
-formularios de agentes. La experiencia nueva se presentará como:
+La navegación de la organización mantiene las áreas y equipos existentes como
+funciones compatibles, pero la experiencia normal comienza directamente por
+departamentos:
 
 ```text
 Organización
-├── Resumen
-├── Departamentos
-├── Áreas
-├── Equipos y agentes
-└── Reglas de asignación
+└── Departamentos
+    └── Ventas
+        ├── General
+        ├── Canales y bienvenida
+        ├── Equipo y asignación
+        ├── Horario
+        ├── Cierre y resolución
+        ├── Satisfacción
+        ├── IA
+        └── Avanzado → Áreas / reglas
 ```
 
-`wapi-admin` no será la pantalla operativa del cliente. El panel de workspace
-seguirá reservado para administración global, planes y configuración técnica.
+## Alta en menos de un minuto
 
-## Vista principal: resumen
+El botón **Nuevo departamento** abre un formulario pequeño, no un modal gigante.
 
 ```text
-┌────────────────────────────────────────────────────────────────────────────┐
-│ Organización                                      [Ayuda] [Crear departamento] │
-│ Organiza tu atención por departamentos, áreas y equipos                       │
-├──────────────────┬──────────────────┬──────────────────┬────────────────────┤
-│ Departamentos    │ Áreas            │ Agentes          │ Sin asignar         │
-│ 3 activos        │ 7 activas        │ 14 activos       │ 5 conversaciones    │
-├────────────────────────────────────────────────────────────────────────────┤
-│ Departamentos                                                               │
-│ Buscar...       Estado: Todos                                      [+ Nuevo] │
-├──────────────────┬─────────────┬────────────┬──────────────┬─────────────────┤
-│ Comercial        │ 2 áreas     │ 6 agentes  │ 18 abiertas  │ Abrir           │
-│ Soporte          │ 3 áreas     │ 5 agentes  │  7 abiertas  │ Abrir           │
-│ Administración   │ 2 áreas     │ 3 agentes  │  2 abiertas  │ Abrir           │
-└──────────────────┴─────────────┴────────────┴──────────────┴─────────────────┘
+PASO 1 · INFORMACIÓN
+Nombre *        [Ventas                         ]
+Descripción     [Atención comercial             ]
+Color           [●]
+
+PASO 2 · ATENCIÓN INICIAL (opcional)
+Conexiones      ☑ WhatsApp Italia   ☐ Instagram
+Team principal  [Equipo Comercial                 ]
+Agentes         ☑ María   ☑ Carlos
+
+[Cancelar] [Crear departamento] [Crear y configurar]
 ```
 
-La vista no mostrará una configuración de IA en la primera versión. El estado
-de atención será claramente **Humano**.
+Solo el nombre es obligatorio. Las conexiones, el team y los agentes se
+guardan usando los recursos existentes; el usuario nunca necesita conocer
+`workspace_id`, membresías o eventos de asignación.
 
-## Flujo de configuración
-
-### Paso 1: crear departamento
-
-El administrador selecciona **Crear departamento** y completa:
-
-- Nombre: `Comercial`.
-- Descripción.
-- Estado.
-- Orden opcional.
-
-Al guardar, el departamento no recibe conversaciones automáticamente todavía.
-
-### Paso 2: crear área
-
-Desde el departamento se selecciona **Nueva área**:
-
-- Nombre: `Ventas`.
-- Descripción.
-- Equipo principal: se selecciona un `Team` existente.
-- Supervisor opcional: se selecciona un agente autorizado.
-- Estado.
-
-El selector de equipos reutiliza los equipos actuales de AllSender. No se crea
-un segundo sistema de equipos ni se cambian los permisos de `TeamPermission`.
-
-### Paso 3: asociar agentes
-
-En la pestaña **Miembros** se seleccionan los agentes existentes:
+## Lista de departamentos
 
 ```text
-Área: Ventas
+Departamentos
+Organiza la atención de tus clientes por áreas del negocio, equipos y canales.
 
-Buscar agente...
+[+ Nuevo departamento]
+[Buscar] [Estado] [Conexión] [Tarjetas | Lista]
 
-☑ María Rodríguez       Vendedor       Activo
-☑ Carlos Pérez          Vendedor       Activo
-☐ Ana Gómez             Supervisora   Activo
-
-Rol en el área:
-○ Miembro   ● Supervisor   ○ Gerente
-
-                                      [Guardar miembros]
+● Ventas                         Activo
+  Atención comercial             Agentes: 2   Canales: 1
+  Team: Equipo Comercial         Atención: Humana
+  Horario: Heredado              Abiertos: —
 ```
 
-Un agente conserva su equipo y sus permisos actuales. La membresía de área es
-operativa y no reemplaza el rol de usuario.
+Los estados deben ser explícitos: **Configurado**, **Pendiente**,
+**Desactivado** o **Heredado**. Cuando la métrica de conversaciones abiertas
+no existe en el host, se muestra `—`, nunca un dato inventado.
 
-### Paso 4: configurar asignación
-
-La pantalla **Reglas de asignación** permite elegir:
-
-- Canal.
-- Cuenta conectada.
-- Palabras clave.
-- Etiqueta del contacto.
-- Departamento destino.
-- Área destino.
-- Equipo destino.
-- Cola o round-robin.
-
-Ejemplo:
+## Página del departamento
 
 ```text
-Nombre: Consultas de ventas por Instagram
-Canal: Instagram
-Palabras clave: precio, comprar, catálogo
-Departamento: Comercial
-Área: Ventas
-Equipo: Vendedores
-Método: Round-robin
-Estado: Inactiva
+← Departamentos                         [Activo] [Guardar cambios]
+Ventas
+Atención comercial y nuevos clientes
 
-[Probar regla]                       [Activar regla]
+General                 Configurado
+Canales y bienvenida    Configurado
+Equipo y asignación    2 equipos
+Horario                Heredado
+Cierre y resolución    Desactivado
+Satisfacción           Desactivada
+IA                     Desactivada
+Avanzado               Opcional
 ```
 
-La regla debe poder probarse antes de activarse. **Probar regla** solo calcula
-el destino; no asigna conversaciones ni envía mensajes.
+Cada sección tiene su propio estado de edición y guardado. El aviso
+**Cambios sin guardar** solo pertenece a la sección actual; al guardar aparece
+**Guardado**.
 
-## Vista de departamento
+## Canales y bienvenida
+
+Se seleccionan conexiones ya vinculadas a AllSender y se define la bienvenida.
+La vista previa del lado derecho se actualiza con el texto y las variables,
+por ejemplo `{{contact.name}}`. El flujo opcional apunta al automation builder
+existente; no se crea un chatbot paralelo.
 
 ```text
-┌────────────────────────────────────────────────────────────────────────────┐
-│ ← Organización / Comercial                           [Editar] [Desactivar] │
-│ Atención comercial y oportunidades                                          │
-├──────────────┬──────────────┬──────────────┬────────────────────────────────┤
-│ Resumen      │ Áreas        │ Miembros     │ Reglas de asignación           │
-├────────────────────────────────────────────────────────────────────────────┤
-│ Áreas del departamento                                      [+ Nueva área]  │
-│                                                                            │
-│ Ventas        Activa    Vendedores       4 agentes       12 abiertas       │
-│ Cotizaciones  Activa    Presupuestos     2 agentes        6 abiertas       │
-└────────────────────────────────────────────────────────────────────────────┘
+Conexiones vinculadas
+☑ WhatsApp Italia
+☐ Instagram
+
+Mensaje de bienvenida
+Hola {{contact.name}}, ¿cómo podemos ayudarte?
+
+Flujo automático de bienvenida       [Activar flujo]
+El cliente será enviado directamente al equipo.
+
+🌐 Traducciones
+Español       Principal
+Italiano      Pendiente
+Inglés        Pendiente
+Fallback: usar el mensaje principal.
 ```
 
-## Vista del área
+## Equipo, agentes y asignación
 
-La vista del área tendrá tres zonas:
-
-1. Información y estado.
-2. Equipo, supervisor y miembros.
-3. Conversaciones pendientes y reglas activas.
+El team es una referencia al `Team` real de AllSender. Un agente puede estar en
+varios departamentos y la membresía no modifica su `User.team_id`.
 
 ```text
-┌──────────────────────────────┬─────────────────────────────────────────────┐
-│ Ventas                       │ Conversaciones del área                      │
-│ Comercial / Ventas           │ [Todas] [Sin asignar] [Abiertas] [Resueltas] │
-│ Equipo: Vendedores           │                                             │
-│ Supervisor: Ana Gómez        │ Cliente 1       Instagram     María         │
-│ 4 miembros                   │ Cliente 2       WhatsApp      Sin asignar   │
-│                              │ Cliente 3       Facebook      Carlos        │
-│ [Editar área]                │                                             │
-└──────────────────────────────┴─────────────────────────────────────────────┘
+Modo de asignación
+○ Manual       ○ Round-robin       ○ Menor carga
+
+Team principal [Equipo Comercial]
+[ ] Permitir agentes fuera de línea
+[✓] Reasignar si deja de estar disponible
+[ ] Permitir IA antes de asignar humano
+
+Agentes
+María       En línea   Miembro ✓   Recibe asignaciones ✓
+Carlos      Ausente    Miembro ✓   Recibe asignaciones ✓
 ```
 
-## Integración con la bandeja de chats
+Las áreas son opcionales. Solo aparecen en **Avanzado → Áreas** para negocios
+que necesitan una clasificación adicional.
 
-En la bandeja existente se agregará un filtro de organización al filtro actual
-de agentes:
+## Horario, cierre y satisfacción
+
+Horario ofrece **Usar horario de la empresa**, **Personalizar este departamento**
+o **Desactivar horario**. La personalización admite zona horaria, múltiples
+intervalos por día y mensaje fuera de horario. Cierre permite motivo, aviso,
+inactividad, despedida y cierre de chats IA. Satisfacción permite encuesta
+1–5, comentario, tiempo límite, rangos de respuesta y traducciones.
+
+## IA y transferencia
+
+IA es opcional y parte de la configuración del departamento. Puede estar
+desactivada, actuar como asistente, atender primero o actuar automáticamente.
+Se reutilizan los agentes IA y el contexto del host. La transferencia puede
+dirigirse al team principal, otro team, un departamento o una persona; el host
+debe conservar historial, archivos, notas y contacto.
+
+## Bandeja de entrada
+
+El Inbox debe incorporar los filtros Departamento, Área opcional, Team, Agente,
+Canal y Estado. En cada conversación se muestra el destino operativo:
 
 ```text
-Filtros
-├── Canal
-├── Estado
-├── Departamento
-├── Área
-├── Equipo
-├── Agente
-└── Sin asignar
+Ventas → Equipo Comercial → María
+Ventas → Emma Sales AI
 ```
 
-En el perfil de cada conversación se mostrará:
+El módulo de organización calcula y valida el destino. La recepción de
+mensajes, asignación efectiva, respuesta, cierre y handoff deben conectarse al
+flujo de conversación ya existente.
 
-```text
-Departamento: Comercial
-Área: Ventas
-Equipo: Vendedores
-Agente: María Rodríguez
+## Criterios de aceptación
 
-[Cambiar departamento] [Cambiar área] [Reasignar agente]
-```
-
-La respuesta seguirá siendo humana desde la bandeja actual. La creación de un
-departamento o una regla no debe enviar ningún mensaje automáticamente.
-
-## Configuración inicial recomendada
-
-Para un cliente nuevo:
-
-1. Crear los departamentos reales del negocio.
-2. Crear las áreas de cada departamento.
-3. Seleccionar los equipos existentes.
-4. Asociar agentes activos.
-5. Definir supervisores.
-6. Probar asignación manual.
-7. Crear una regla por canal.
-8. Probar la regla sin activarla.
-9. Activar una sola regla.
-10. Verificar conversaciones nuevas.
-
-Configuración inicial de seguridad:
-
-```text
-IA: desactivada
-Respuesta automática: desactivada
-Routing: manual hasta validar estructura
-Reglas nuevas: inactivas hasta probarlas
-Conversaciones antiguas: no migrar automáticamente
-```
-
-## Guía de uso para el cliente
-
-El usuario final debe poder entender lo siguiente sin conocer la arquitectura:
-
-- Un departamento es una unidad grande del negocio.
-- Un área es una función específica dentro del departamento.
-- Un equipo es el grupo de agentes que atiende esa función.
-- Un agente es la persona que responde al cliente.
-- Una regla decide a qué área debe llegar una conversación nueva.
-- Una conversación existente no cambia de agente por crear una regla.
-- La IA no está activa en esta primera versión.
-
-## Segunda opción: IA
-
-La IA no aparecerá como paso obligatorio de configuración. Cuando se implemente,
-se añadirá dentro de una sección separada de automatización del área:
-
-```text
-Área: Preguntas frecuentes
-Modo de atención
-○ Solo humanos
-○ IA como sugerencia
-○ IA automática controlada
-
-Chatbot: [seleccionar]
-Escalar a humano cuando: [queja, reembolso, legal, seguridad]
-```
-
-El valor por defecto será **Solo humanos**. La IA deberá configurarse por área,
-no de forma global para todos los clientes.
-
-## Criterios visuales de aceptación
-
-Antes de integrar en producción deben comprobarse:
-
-- La entrada aparece cerca de `Organization Teams` y conserva los enlaces
-  actuales.
-- Un cliente entiende la diferencia entre departamento, área, equipo y agente.
-- La selección de un equipo reutiliza los equipos actuales.
-- Las reglas inactivas no afectan conversaciones.
-- La prueba de regla no muta datos.
-- La bandeja permite filtrar por departamento y área.
-- El agente ve solamente las conversaciones autorizadas.
-- La pantalla indica claramente que la IA está desactivada.
-- Todas las etiquetas están traducidas a español e inglés.
-- Los estados de carga, vacío, error y permiso denegado tienen una respuesta
-  visual clara.
+- Crear `Ventas` solo con nombre funciona.
+- Crear con canal, team y agentes guarda las relaciones existentes.
+- Departamento sin área funciona; departamentos y reglas antiguas con área
+  siguen funcionando.
+- Las secciones guardan de forma independiente.
+- Un workspace no puede leer ni guardar recursos de otro.
+- Estados de carga, vacío, error y permisos se muestran en lenguaje de cliente.
+- La pantalla funciona en desktop, tablet, móvil y tema claro/oscuro.
+- IA y automatizaciones permanecen apagadas por defecto.

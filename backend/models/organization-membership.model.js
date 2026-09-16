@@ -3,7 +3,8 @@ import mongoose from 'mongoose';
 const membershipSchema = new mongoose.Schema({
   workspace_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Workspace', required: true, index: true },
   department_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Department', required: true, index: true },
-  area_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Area', required: true, index: true },
+  // Area is an advanced, backward-compatible scope. Department -> Team -> Agent is valid without it.
+  area_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Area', required: false, default: null, index: true },
   team_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Team', default: null, index: true },
   user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
   role: { type: String, enum: ['member', 'supervisor', 'manager'], default: 'member' },
