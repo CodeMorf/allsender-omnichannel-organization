@@ -259,4 +259,3 @@ Antes de integrar en producción deben comprobarse:
 - Todas las etiquetas están traducidas a español e inglés.
 - Los estados de carga, vacío, error y permiso denegado tienen una respuesta
   visual clara.
-
