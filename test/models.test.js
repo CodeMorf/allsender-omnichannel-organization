@@ -30,4 +30,5 @@ test('organization models reference existing AI chatbots without implementing a 
     assert.equal(Model.schema.path('ai_model'), undefined);
   }
   assert.equal(DepartmentSettings.schema.path('ai.chatbot_id').options.ref, 'Chatbot');
+  assert.equal(DepartmentSettings.schema.path('resolution.farewell_message').options.default, 'Gracias por contactarnos. Si necesitas algo más, estamos aquí para ayudarte.');
 });
