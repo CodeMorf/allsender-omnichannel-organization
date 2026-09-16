@@ -39,6 +39,35 @@ test('organization routes reject construction without host authentication and pe
   assert.throws(() => createOrganizationRoutes({ resolveWorkspaceId: () => '507f1f77bcf86cd799439011' }), /authenticate middleware is required/);
 });
 
+test('manual conversation assignment receives the resolved workspace and actor', async () => {
+  const app = express();
+  app.use(express.json());
+  const calls = [];
+  const service = {
+    assignConversation: async (input) => { calls.push(input); return { id: 'assignment-1' }; }
+  };
+  app.use('/api/organization', createOrganizationRoutes({
+    service,
+    allowUnsafeForTests: true,
+    resolveWorkspaceId: () => '507f1f77bcf86cd799439011'
+  }));
+  const server = await new Promise((resolve) => {
+    const instance = app.listen(0, () => resolve(instance));
+  });
+  try {
+    const response = await fetch(`http://127.0.0.1:${server.address().port}/api/organization/assignments/507f1f77bcf86cd799439012`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ departmentId: '507f1f77bcf86cd799439013', whatsappPhoneNumberId: 'phone-1' })
+    });
+    assert.equal(response.status, 200);
+    assert.equal(calls[0].workspaceId, '507f1f77bcf86cd799439011');
+    assert.equal(calls[0].contactId, '507f1f77bcf86cd799439012');
+  } finally {
+    await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+  }
+});
+
 test('host adapter rejects ambiguous legacy team and chatbot rows', async () => {
   const workspaceId = '507f1f77bcf86cd799439011';
   const ownerId = '507f1f77bcf86cd799439012';

@@ -249,6 +249,20 @@ class OrganizationService {
     return this.Membership.findOneAndUpdate(query, { $set: { team_id: teamId ? asId(teamId, 'team_id') : null, role, status: 'active', created_by: asId(actorId, 'created_by'), deleted_at: null } }, { upsert: true, new: true, setDefaultsOnInsert: true, runValidators: true }).lean();
   }
 
+  async assignConversation({ workspaceId, actorId, contactId, whatsappPhoneNumberId, departmentId, areaId = null, teamId = null, agentId = null }) {
+    const workspace = asId(workspaceId, 'workspace_id');
+    const department = await ensureWorkspaceResource(this.Department, departmentId, workspace, 'Department');
+    let area = null;
+    if (areaId) {
+      area = await ensureWorkspaceResource(this.Area, areaId, workspace, 'Area');
+      if (String(area.department_id) !== String(department._id)) throw new Error('Area does not belong to the selected department');
+    }
+    await this.validateExternalReference('team', teamId, workspaceId, 'team_id');
+    if (agentId) await this.validateExternalReference('user', agentId, workspaceId, 'agent_id');
+    if (typeof this.validators.assignConversation !== 'function') throw new Error('conversation assignment adapter is required');
+    return this.validators.assignConversation({ workspaceId, actorId, contactId, whatsappPhoneNumberId, departmentId: department._id, areaId: area?._id || null, teamId, agentId });
+  }
+
   async listMemberships({ workspaceId, areaId, departmentId, status = 'active' } = {}) {
     const query = { workspace_id: asId(workspaceId, 'workspace_id'), deleted_at: null };
     if (areaId) query.area_id = asId(areaId, 'area_id');

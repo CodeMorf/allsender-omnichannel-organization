@@ -30,6 +30,10 @@ segundo sistema de usuarios, teams, chatbot, conexiones, IA ni horarios.
   ambigua.
 - Auditoría de asignaciones mediante el flujo existente de conversaciones y
   `ChatAssignment`; resolver una regla por sí solo no envía mensajes.
+- Reasignación manual de una conversación desde Inbox mediante
+  `PUT /api/organization/assignments/:contactId`, protegida por
+  `assign.conversations`; el host adapta la persistencia de su asignación y
+  registra el evento sin duplicar el modelo de Inbox.
 - Cliente de API y contrato para integrar la pantalla de Departamentos de la
   plataforma AllSender.
 
@@ -57,7 +61,7 @@ registerOrganizationModule({
     DepartmentSettings, Chatbot
   },
   middlewares: { authenticate, requireSubscription, checkPermission, checkPlanLimit },
-  validators: { team, user, contact, connection, flow },
+  validators: { team, user, contact, connection, flow, assignConversation },
   resolveWorkspaceId
 });
 ```
@@ -78,7 +82,13 @@ GET   /departments/:id/members
 POST  /departments/:id/members
 GET   /departments/:id/connections
 PUT   /departments/:id/connections
+PUT   /assignments/:contactId
 ```
+
+`assignConversation` es el adaptador del host para actualizar la asignación
+persistida de Inbox y registrar el evento. El módulo valida el workspace y los
+destinos organizativos antes de invocarlo; no duplica `ChatAssignment` ni
+conoce la forma interna de cada host.
 
 Las rutas históricas de áreas, membresías, reglas y eventos se conservan. El
 endpoint de satisfacción devuelve respuestas, promedio, distribución 1-5 y

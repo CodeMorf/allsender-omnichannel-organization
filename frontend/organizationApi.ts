@@ -43,6 +43,7 @@ export function createOrganizationApi(options: OrganizationApiOptions) {
     listMemberships: (workspaceId: string, query = '') => request<OrganizationMembership[]>(`/memberships?workspace_id=${encodeURIComponent(workspaceId)}${query}`, {}, workspaceId),
     upsertMembership: (workspaceId: string, body: Record<string, unknown>) => request<OrganizationMembership>('/memberships', json({ ...body, workspace_id: workspaceId }), workspaceId),
     removeMembership: (workspaceId: string, areaId: string, userId: string) => request<OrganizationMembership>(`/memberships/${encodeURIComponent(areaId)}/${encodeURIComponent(userId)}?workspace_id=${encodeURIComponent(workspaceId)}`, { method: 'DELETE' }, workspaceId),
+    assignConversation: (workspaceId: string, contactId: string, body: Record<string, unknown>) => request<unknown>(`/assignments/${encodeURIComponent(contactId)}`, put(body), workspaceId),
     listRoutingRules: (workspaceId: string, query = '') => request<RoutingRule[]>(`/routing-rules?workspace_id=${encodeURIComponent(workspaceId)}${query}`, {}, workspaceId),
     createRoutingRule: (workspaceId: string, body: Record<string, unknown>) => request<RoutingRule>('/routing-rules', json({ ...body, workspace_id: workspaceId }), workspaceId),
     updateRoutingRule: (workspaceId: string, id: string, body: Record<string, unknown>) => request<RoutingRule>(`/routing-rules/${encodeURIComponent(id)}`, put({ ...body, workspace_id: workspaceId }), workspaceId),
