@@ -68,7 +68,7 @@ no existe en el host, se muestra `—`, nunca un dato inventado.
 ## Página del departamento
 
 ```text
-← Departamentos                         [Activo] [Guardar cambios]
+← Departamentos                         [Activo] [Guardado]
 Ventas
 Atención comercial y nuevos clientes
 
@@ -82,9 +82,12 @@ IA                     Desactivada
 Avanzado               Opcional
 ```
 
-Cada sección tiene su propio estado de edición y guardado. El aviso
-**Cambios sin guardar** solo pertenece a la sección actual; al guardar aparece
-**Guardado**.
+Cada sección tiene su propio estado de edición y guardado. El botón de guardar
+aparece dentro de la sección activa con el nombre correspondiente, por ejemplo
+**Guardar Horario** o **Guardar Canales y bienvenida**. El aviso
+**Cambios sin guardar** solo pertenece a la sección que se está editando; al
+guardar aparece **Guardado**. Cambiar de sección no borra cambios locales
+pendientes.
 
 ## Canales y bienvenida
 
