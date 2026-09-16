@@ -69,13 +69,21 @@ DELETE /departments/:id
 GET   /departments/:id/settings
 PATCH /departments/:id/settings/:section
 GET   /departments/:id/summary
+GET   /departments/:id/satisfaction
 GET   /departments/:id/members
 POST  /departments/:id/members
 GET   /departments/:id/connections
 PUT   /departments/:id/connections
 ```
 
-Las rutas históricas de áreas, membresías, reglas y eventos se conservan.
+Las rutas históricas de áreas, membresías, reglas y eventos se conservan. El
+endpoint de satisfacción devuelve respuestas, promedio, distribución 1-5 y
+comentarios del departamento, siempre limitado por `workspace_id`.
+
+Al cerrar una conversación, el host puede enviar `reason` a `/chat/status`.
+Cuando `resolution.reason_requirement` es `required`, el cierre se rechaza si
+no se proporciona un motivo. El `ChatAssignment` conserva `resolution_reason` y
+`resolved_at`; los cierres automáticos usan el motivo `inactivity`.
 
 ## Permisos
 
