@@ -50,7 +50,7 @@ registerOrganizationModule({
   apiPrefix: '/api',
   models: {
     Department, Area, OrganizationMembership, RoutingRule, AssignmentEvent,
-    DepartmentSettings
+    DepartmentSettings, Chatbot
   },
   middlewares: { authenticate, requireSubscription, checkPermission, checkPlanLimit },
   validators: { team, user, contact, connection, flow },
@@ -100,7 +100,9 @@ Los permisos se evalúan con el RBAC de AllSender; no se crea otro sistema.
 ## IA y transferencia
 
 La IA es opcional. `disabled` mantiene el flujo humano; `assistant`, `first` y
-`automatic` reutilizan los agentes IA existentes. La configuración permite
+`automatic` reutilizan los agentes IA/chatbots existentes. La referencia
+`chatbot_id` se valida contra el workspace antes de guardar la configuración.
+La configuración permite
 fallback y transferencia a humano, pero el módulo no inventa un runtime de IA:
 el host debe conectar esas decisiones con su flujo de Inbox y registrar el
 evento de transferencia.

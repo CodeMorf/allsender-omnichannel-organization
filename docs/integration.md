@@ -17,13 +17,14 @@
    validators: {
      team: async ({ id, workspaceId }) => assertTeamBelongsToOwner(id, workspaceId),
      user: async ({ id, workspaceId }) => assertUserCanOperateInWorkspace(id, workspaceId),
+     chatbot: async ({ id, workspaceId }) => assertChatbotBelongsToWorkspace(id, workspaceId),
      contact: async ({ id, workspaceId }) => assertContactBelongsToWorkspace(id, workspaceId),
      connection: async ({ id, workspaceId }) => assertConnectionBelongsToWorkspace(id, workspaceId),
      flow: async ({ id, workspaceId }) => assertFlowBelongsToWorkspace(id, workspaceId)
    }
    ```
 
-   The module rejects non-null `team_id`, `supervisor_id`, `user_id`, `connection_id` or
+   The module rejects non-null `team_id`, `supervisor_id`, `user_id`, `chatbot_id`, `connection_id` or
    `contact_id` values
    when the corresponding validator is not installed.
 6. Add the permission slugs from the README to the existing permission catalog.

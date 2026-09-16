@@ -125,6 +125,7 @@ class OrganizationService {
     for (const teamId of section === 'assignment' ? [...(data.team_ids || []), data.default_team_id].filter(Boolean) : []) await this.validateExternalReference('team', teamId, workspaceId, 'team_id');
     if (section === 'general' && data.responsible_user_id) await this.validateExternalReference('user', data.responsible_user_id, workspaceId, 'responsible_user_id');
     if (section === 'ai' && data.agent_id) await this.validateExternalReference('user', data.agent_id, workspaceId, 'agent_id');
+    if (section === 'ai' && data.chatbot_id) await this.validateExternalReference('chatbot', data.chatbot_id, workspaceId, 'chatbot_id');
     if (section === 'chat' && data.flow_id) await this.validateExternalReference('flow', data.flow_id, workspaceId, 'flow_id');
     if (section === 'chat' && data.connection_ids !== undefined) {
       if (!Array.isArray(data.connection_ids)) throw new Error('connection_ids must be an array');

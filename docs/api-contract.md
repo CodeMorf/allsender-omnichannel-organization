@@ -143,7 +143,7 @@ resolution:       mode, reason_requirement, auto_close, close_after_minutes,
 satisfaction:     enabled, send_on_auto_close, type, request_message,
                   thank_you_message, request_comment, comment_timeout,
                   comment_message, rating_rules, translations
-ai:               mode, agent_id, response_language, similarity_threshold,
+ai:               mode, agent_id, chatbot_id, response_language, similarity_threshold,
                   prompt_override, fallback_message, human_handoff,
                   human_handoff_message, handoff_reasons
 ```

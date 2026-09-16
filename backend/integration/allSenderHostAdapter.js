@@ -12,7 +12,7 @@ const currentOwnerId = (req) => req.user?.owner_id || req.user?._id || req.user?
  * populated by the platform base API; body/query workspace ids are ignored.
  */
 export function createAllSenderOrganizationHostAdapter({ models } = {}) {
-  const { Workspace, Team, User, Role, Contact } = models || {};
+  const { Workspace, Team, User, Role, Contact, Chatbot } = models || {};
   if (!Workspace || !Team || !User || !Role || !Contact) {
     throw new Error('AllSender organization adapter requires Workspace, Team, User, Role and Contact models');
   }
@@ -33,6 +33,17 @@ export function createAllSenderOrganizationHostAdapter({ models } = {}) {
   };
 
   const validators = {
+    ...(Chatbot ? {
+      chatbot: async ({ id, workspaceId }) => {
+        const workspace = await Workspace.findById(toObjectId(workspaceId)).select('user_id').lean();
+        const ownerId = workspace?.user_id;
+        const chatbot = ownerId
+          ? await Chatbot.findOne({ _id: toObjectId(id), user_id: ownerId, deleted_at: null, status: 'active' }).select('_id').lean()
+          : null;
+        if (!chatbot) throw new Error('Chatbot is not available in this workspace');
+        return chatbot;
+      }
+    } : {}),
     user: async ({ id, workspaceId }) => {
       const workspace = await Workspace.findById(toObjectId(workspaceId)).select('user_id').lean();
       const ownerId = workspace?.user_id;
