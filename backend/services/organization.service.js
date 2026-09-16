@@ -271,8 +271,16 @@ class OrganizationService {
     return this.Membership.find(query).sort({ role: 1, created_at: 1 }).populate('user_id', 'name email status').populate('team_id', 'name status').lean();
   }
 
-  async removeMembership({ workspaceId, areaId, userId }) {
-    const result = await this.Membership.findOneAndUpdate({ workspace_id: asId(workspaceId, 'workspace_id'), area_id: asId(areaId, 'area_id'), user_id: asId(userId, 'user_id'), deleted_at: null }, { $set: { deleted_at: new Date(), status: 'inactive' } }, { new: true }).lean();
+  async removeMembership({ workspaceId, departmentId, areaId, userId }) {
+    const query = { workspace_id: asId(workspaceId, 'workspace_id'), user_id: asId(userId, 'user_id'), deleted_at: null };
+    if (departmentId) {
+      query.department_id = asId(departmentId, 'department_id');
+      query.area_id = areaId ? asId(areaId, 'area_id') : null;
+    } else if (areaId) {
+      query.area_id = asId(areaId, 'area_id');
+    }
+    if (!departmentId && !areaId) throw new Error('department_id or area_id is required');
+    const result = await this.Membership.findOneAndUpdate(query, { $set: { deleted_at: new Date(), status: 'inactive' } }, { new: true }).lean();
     if (!result) throw new Error('Membership not found in this workspace');
     return result;
   }

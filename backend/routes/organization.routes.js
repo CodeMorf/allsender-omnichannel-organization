@@ -92,6 +92,11 @@ export function createOrganizationRoutes({ models, middlewares = {}, validators,
     return res.status(201).json({ success: true, data });
   }));
 
+  router.delete('/departments/:id/members/:userId', usePermission(checkPermission, 'manage.organization'), asyncRoute(async (req, res) => {
+    const data = await organization.removeMembership({ workspaceId: workspace(req), departmentId: req.params.id, areaId: req.query.areaId, userId: req.params.userId });
+    return res.json({ success: true, data });
+  }));
+
   router.put('/assignments/:contactId', usePermission(checkPermission, 'assign.conversations'), asyncRoute(async (req, res) => {
     const data = await organization.assignConversation({ ...req.body, contactId: req.params.contactId, workspaceId: workspace(req), actorId: actor(req) });
     return res.json({ success: true, data });

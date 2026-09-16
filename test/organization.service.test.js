@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { matchConditions, slugify } from '../backend/services/organization.service.js';
+import { createOrganizationService, matchConditions, slugify } from '../backend/services/organization.service.js';
 
 test('slugify produces stable URL-safe identifiers for Spanish names', () => {
   assert.equal(slugify(' Atención al Cliente '), 'atencion-al-cliente');
@@ -17,4 +17,27 @@ test('routing conditions match platform, account, keywords and tags', () => {
 
 test('empty routing conditions are a catch-all rule', () => {
   assert.equal(matchConditions({ platform: 'whatsapp', text: 'hola' }, {}), true);
+});
+
+test('department-level membership removal targets the null-area membership', async () => {
+  const queries = [];
+  const service = createOrganizationService({
+    OrganizationMembership: {
+      findOneAndUpdate: (query) => {
+        queries.push(query);
+        return { lean: async () => ({ _id: '507f1f77bcf86cd799439014' }) };
+      }
+    }
+  });
+
+  const result = await service.removeMembership({
+    workspaceId: '507f1f77bcf86cd799439011',
+    departmentId: '507f1f77bcf86cd799439012',
+    userId: '507f1f77bcf86cd799439013'
+  });
+
+  assert.equal(result._id, '507f1f77bcf86cd799439014');
+  assert.equal(queries.length, 1);
+  assert.equal(queries[0].department_id.toString(), '507f1f77bcf86cd799439012');
+  assert.equal(queries[0].area_id, null);
 });
