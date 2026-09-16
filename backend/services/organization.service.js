@@ -126,6 +126,10 @@ class OrganizationService {
     if (section === 'general' && data.responsible_user_id) await this.validateExternalReference('user', data.responsible_user_id, workspaceId, 'responsible_user_id');
     if (section === 'ai' && data.agent_id) await this.validateExternalReference('user', data.agent_id, workspaceId, 'agent_id');
     if (section === 'chat' && data.flow_id) await this.validateExternalReference('flow', data.flow_id, workspaceId, 'flow_id');
+    if (section === 'chat' && data.connection_ids !== undefined) {
+      if (!Array.isArray(data.connection_ids)) throw new Error('connection_ids must be an array');
+      for (const connectionId of [...new Set(data.connection_ids.map(String))]) await this.validateExternalReference('connection', connectionId, workspaceId, 'connection_id');
+    }
     return this.DepartmentSettings.findOneAndUpdate({ workspace_id: department.workspace_id, department_id: department._id }, { $set: { [section]: data, updated_by: asId(actorId, 'updated_by') }, $setOnInsert: { workspace_id: department.workspace_id, department_id: department._id } }, { upsert: true, new: true, setDefaultsOnInsert: true, runValidators: true }).lean();
   }
 
@@ -133,6 +137,22 @@ class OrganizationService {
     const department = await this.getDepartment({ workspaceId, id });
     const [settings, agentsCount] = await Promise.all([this.getDepartmentSettings({ workspaceId, id }), this.Membership.countDocuments({ workspace_id: department.workspace_id, department_id: department._id, status: 'active', deleted_at: null })]);
     return { department, settings, agentsCount, openConversations: null };
+  }
+
+  async listDepartmentConnections({ workspaceId, id }) {
+    const department = await this.getDepartment({ workspaceId, id });
+    const settings = await this.getDepartmentSettings({ workspaceId, id });
+    const available = typeof this.validators.listConnections === 'function' ? await this.validators.listConnections(workspaceId) : [];
+    const selected = new Set((settings.chat?.connection_ids || []).map(String));
+    return { items: available, selected_ids: available.filter((item) => selected.has(String(item.id))).map((item) => item.id), department_id: department._id };
+  }
+
+  async updateDepartmentConnections({ workspaceId, actorId, id, connection_ids = [] }) {
+    const department = await this.getDepartment({ workspaceId, id });
+    if (!Array.isArray(connection_ids)) throw new Error('connection_ids must be an array');
+    const ids = [...new Set(connection_ids.map((value) => String(value).trim()).filter(Boolean))].slice(0, 100);
+    for (const connectionId of ids) await this.validateExternalReference('connection', connectionId, workspaceId, 'connection_id');
+    return this.DepartmentSettings.findOneAndUpdate({ workspace_id: department.workspace_id, department_id: department._id }, { $set: { 'chat.connection_ids': ids, updated_by: asId(actorId, 'updated_by') }, $setOnInsert: { workspace_id: department.workspace_id, department_id: department._id } }, { upsert: true, new: true, setDefaultsOnInsert: true, runValidators: true }).lean();
   }
 
   async updateDepartment({ workspaceId, actorId, id, ...data }) {

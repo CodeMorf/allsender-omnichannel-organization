@@ -72,6 +72,16 @@ export function createOrganizationRoutes({ models, middlewares = {}, validators,
     return res.json({ success: true, data });
   }));
 
+  router.get('/departments/:id/connections', usePermission(checkPermission, 'view.departments'), asyncRoute(async (req, res) => {
+    const data = await organization.listDepartmentConnections({ workspaceId: workspace(req), id: req.params.id });
+    return res.json({ success: true, data });
+  }));
+
+  router.put('/departments/:id/connections', usePermission(checkPermission, 'update.departments'), asyncRoute(async (req, res) => {
+    const data = await organization.updateDepartmentConnections({ workspaceId: workspace(req), actorId: actor(req), id: req.params.id, connection_ids: req.body?.connection_ids });
+    return res.json({ success: true, data });
+  }));
+
   router.get('/departments/:id/members', usePermission(checkPermission, 'view.organization'), asyncRoute(async (req, res) => {
     const data = await organization.listMemberships({ workspaceId: workspace(req), departmentId: req.params.id, areaId: req.query.areaId });
     return res.json({ success: true, data });
