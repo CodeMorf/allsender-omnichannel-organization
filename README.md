@@ -80,6 +80,7 @@ GET   /departments/:id/summary
 GET   /departments/:id/satisfaction
 GET   /departments/:id/members
 POST  /departments/:id/members
+DELETE /departments/:id/members/:userId   (?areaId=... solo si aplica)
 GET   /departments/:id/connections
 PUT   /departments/:id/connections
 PUT   /assignments/:contactId

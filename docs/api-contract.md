@@ -71,7 +71,9 @@ DELETE  /areas/:id
 
 Una membresía nueva requiere `department_id` y `user_id`; `area_id` y `team_id`
 son opcionales. Los registros históricos que ya tienen área continúan siendo
-válidos. El team seleccionado es una referencia al `Team` existente y nunca
+válidos. Para retirar una membresía del departamento general se omite `areaId`
+y el servicio busca explícitamente `area_id: null`; para retirar una membresía
+de área se envía `?areaId=<id>`. El team seleccionado es una referencia al `Team` existente y nunca
 reescribe `User.team_id`.
 
 ```json
