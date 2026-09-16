@@ -25,9 +25,9 @@ test('area is optional for the primary department membership and routing flows',
   assert.equal(DepartmentSettings.schema.path('department_id').options.required, true);
 });
 
-test('organization models do not add AI or outbound-send behavior', () => {
+test('organization models reference existing AI chatbots without implementing a runtime', () => {
   for (const Model of [Department, Area, Membership, RoutingRule, AssignmentEvent, DepartmentSettings]) {
-    assert.equal(Model.schema.path('chatbot_id'), undefined);
     assert.equal(Model.schema.path('ai_model'), undefined);
   }
+  assert.equal(DepartmentSettings.schema.path('ai.chatbot_id').options.ref, 'Chatbot');
 });
