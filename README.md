@@ -24,6 +24,10 @@ segundo sistema de usuarios, teams, chatbot, conexiones, IA ni horarios.
 - Routing con destino `department_id` obligatorio y `area_id`/`team_id` opcionales.
 - Validación de workspace para departamentos, áreas, teams, agentes, contactos,
   automatizaciones y conexiones.
+- Los `Team` y `Chatbot` reutilizados deben tener `workspace_id`; las filas
+  antiguas sin ese campo solo se aceptan durante la transición si el propietario
+  tiene un único workspace activo. Nunca se resuelve una fila heredada de forma
+  ambigua.
 - Auditoría de asignaciones mediante el flujo existente de conversaciones y
   `ChatAssignment`; resolver una regla por sí solo no envía mensajes.
 - Cliente de API y contrato para integrar la pantalla de Departamentos de la

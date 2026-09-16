@@ -9,9 +9,10 @@
 3. Provide the existing `authenticate`, `requireSubscription`,
    `checkPermission`, and optional `checkPlanLimit` middlewares.
 4. Provide a workspace resolver that validates user, owner and selected
-   workspace membership.
+   workspace membership. The selected workspace must be the server-derived
+   context; never accept a workspace id from the body or query string.
 5. Provide external-reference validators when the request includes an existing
-   team or user:
+   team, chatbot or user:
 
    ```js
    validators: {
@@ -38,9 +39,13 @@
 The repository includes `createAllSenderOrganizationHostAdapter` as a starting
 adapter for the current AllSender schemas. It resolves the selected workspace
 only from `x-workspace-id`, checks ownership through `Workspace`, and validates
-teams, agents and contacts against the existing collections. The production host
-must still inject its real model registry and review its permission/plan policy
-before enabling writes.
+teams, chatbots, agents and contacts against the existing collections. `Team`
+and `Chatbot` must carry `workspace_id` in the host schema. During a
+non-destructive migration, rows with a null or missing `workspace_id` are
+accepted only when the owner has exactly one active workspace and the owner
+also matches; ambiguous legacy rows are rejected until explicitly backfilled.
+The production host must still inject its real model registry and review its
+permission/plan policy before enabling writes.
 
 ## Platform host
 
@@ -65,3 +70,6 @@ before enabling writes.
   memberships and rules that contain an area remain valid.
 - Save each department settings section independently. A disabled or inherited
   section must not block saving an unrelated section.
+- Backfill legacy `Team` and `Chatbot` rows before enabling multiple workspaces
+  for the same owner. The migration must be idempotent, preserve secrets, and
+  stop on ambiguous ownership instead of guessing.
