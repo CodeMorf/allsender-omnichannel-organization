@@ -63,6 +63,8 @@ permission/plan policy before enabling writes.
 - Keep `User.team_id` as the existing primary team reference.
 - Keep `Contact.assigned_to` for the existing human assignment.
 - Keep `ChatAssignment` for the channel-specific assignment flow.
+- When reusing a legacy `ChatAssignment`, include `workspace_id` in every lookup;
+  owner and phone identifiers alone are not a safe tenant boundary.
 - Do not move historical contacts during the first rollout.
 - Do not make a department or area required for existing records until a
   dry-run migration proves that all records have a valid workspace.
